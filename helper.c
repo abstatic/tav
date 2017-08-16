@@ -13,10 +13,8 @@ void getControl(int fd)
 
   n_term = o_term;
 
-  /* raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON); */
+  /* n_term.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON); */
   n_term.c_lflag &= ~(ICANON | ECHO);
-  n_term.c_cc[VMIN] = 0;
-  n_term.c_cc[VTIME] = 1;
 
   // TCSANOW means apply the changes immediately
   tcsetattr(fd, TCSANOW, &n_term);
@@ -28,7 +26,7 @@ void getControl(int fd)
  * Depending on the mode and keypress this function will call respective 
  * routines
  */
-void readkey(void)
+void readKey(void)
 {
   int c;
 
@@ -37,7 +35,7 @@ void readkey(void)
   if (c == ESCAPE)
     handleEscapeSequence();
   else
-    putchar(c);
+    printf("%c", c);
 }
 
 /*
@@ -45,5 +43,45 @@ void readkey(void)
  */
 void handleEscapeSequence(void)
 {
-  printf("Handle Escape seq\n");
+  /*
+   * Since every escape sequence is basically three characters
+   * First has already been read
+   */
+  int c;
+  c = getchar();
+  if (c == '[')
+  {
+    int key = getchar();
+
+    switch(key)
+    {
+      case 'A':
+        key = UP;
+        break;
+      case 'B':
+        key = DOWN;
+        break;
+      case 'C':
+        key = LEFT;
+        break;
+      case 'D':
+        key = RIGHT;
+        break;
+      default:
+        key = 0;
+        break;
+    }
+
+    if (key != 0)
+    {
+      if (key == UP)
+        cursorupward(1);
+      else if (key == DOWN)
+        cursordownward(1);
+      else if (key == LEFT)
+        cursorbackward(1);
+      else if (key == RIGHT)
+        cursorforward(1);
+    }
+  }
 }

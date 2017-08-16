@@ -15,12 +15,13 @@
 #define gotopos(x,y) printf("\033[%d;%dH", (x), (y))
 
 // escape characters for keys
-#define ESCAPE 0x001b
-#define ENTER  0x000a
-#define UP     0x0105
-#define DOWN   0x0106
-#define LEFT   0x0107
-#define RIGHT  0x0108
+#define ESCAPE    0x001b
+#define ENTER     0x000a
+#define UP        0x0105
+#define DOWN      0x0106
+#define LEFT      0x0107
+#define RIGHT     0x0108
+#define BACKSPACE 0x7f
 
 // function declaration 
 void getControl(int fd);
