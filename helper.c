@@ -57,10 +57,10 @@ void handleEscapeSequence(void)
    * First has already been read
    */
   int c;
-  c = getchar();
+  c = getc(stdin);
   if (c == '[')
   {
-    int key = getchar();
+    int key = getc(stdin);
 
     switch(key)
     {
@@ -108,11 +108,13 @@ void handleEscapeSequence(void)
 void handle_winresize(int sig)
 {
   signal(SIGWINCH, SIG_IGN);
-  printf("Window resize occured");
   struct winsize w;
   ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+
+  // store the windows sizei nto the props struct
   g_tavProps.w_row = w.ws_row;
   g_tavProps.w_col = w.ws_col;
+  drawWindow();
 }
 
 /*
@@ -127,18 +129,45 @@ void initscr(void)
 
   g_tavProps.w_row = w.ws_row;
   g_tavProps.w_col = w.ws_col;
-  clearscr;
-  drawWindow();
-  gotopos(0,0);
+  g_tavProps.cursor_x = 0;
+  g_tavProps.cursor_y = 0;
+  g_tavProps.mode = DEFAULT_MODE;
+  g_tavProps.filename = DEFAULT_FILE_NAME;
 }
 
 void drawWindow(void)
 {
+  clrscr;
   int rows = g_tavProps.w_row;
   int cols = g_tavProps.w_col;
+  int current_x = g_tavProps.cursor_x;
+  int current_y = g_tavProps.cursor_y;
 
-  gotopos(0,0);
-  printf("\n");
-  for (int i = 0; i < rows-1; i++)
+  gotopos(2,0);
+  for (int i = 1; i < rows-1; i++)
     printf("~\n");
+  setStatusLine();
+  gotopos(current_x, current_y);
+}
+
+/*
+ * This method is used to set the status line in TAV
+ *
+ */
+void setStatusLine(void)
+{
+  int bottom = g_tavProps.w_row - 1; // last row left for commands and messages
+  int right_offset = g_tavProps.w_col - 11;
+  char* mode = g_tavProps.mode;
+  char* filename = g_tavProps.filename;
+
+  if (g_tavProps.is_mod)
+    filename += '*';
+
+  // go to the right postion of status line
+  gotopos(bottom, 0);
+  printf(" %6s |", mode);
+  printf(" %s ", filename);
+  gotopos(bottom, right_offset);
+  printf("LN %4d:%-3d", g_tavProps.cursor_x, g_tavProps.cursor_y);
 }
