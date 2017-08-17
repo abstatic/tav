@@ -35,7 +35,16 @@ void readKey(void)
   if (c == ESCAPE)
     handleEscapeSequence();
   else
-    printf("%c", c);
+  {
+    if (c == BACKSPACE)
+    {
+      printf("\b");
+      printf(" ");
+      printf("\b");
+    }
+    else
+      printf("%c", c);
+  }
 }
 
 /*
@@ -67,6 +76,9 @@ void handleEscapeSequence(void)
       case 'D':
         key = RIGHT;
         break;
+      case '~':
+        key = DELETE;
+        break;
       default:
         key = 0;
         break;
@@ -82,6 +94,51 @@ void handleEscapeSequence(void)
         cursorbackward(1);
       else if (key == RIGHT)
         cursorforward(1);
+      else if (key == DELETE)
+        printf("DEL");
     }
   }
+}
+
+/*
+ * This method is a signal handler
+ * It will be called everytime the window resize happens
+ *
+ */
+void handle_winresize(int sig)
+{
+  signal(SIGWINCH, SIG_IGN);
+  printf("Window resize occured");
+  struct winsize w;
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+  g_tavProps.w_row = w.ws_row;
+  g_tavProps.w_col = w.ws_col;
+}
+
+/*
+ * Initialize the screen and the editor config
+ *
+ */
+void initscr(void)
+{
+  // get the window size
+  struct winsize w;
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+
+  g_tavProps.w_row = w.ws_row;
+  g_tavProps.w_col = w.ws_col;
+  clearscr;
+  drawWindow();
+  gotopos(0,0);
+}
+
+void drawWindow(void)
+{
+  int rows = g_tavProps.w_row;
+  int cols = g_tavProps.w_col;
+
+  gotopos(0,0);
+  printf("\n");
+  for (int i = 0; i < rows-1; i++)
+    printf("~\n");
 }
