@@ -43,6 +43,7 @@
 #define INSERT_MODE         "Insert"
 #define DEFAULT_FILE_NAME   "[NoName]"
 #define DEFAULT_MODE        "Normal"
+#define LINE_SIZE           80
 
 
 // function declaration 
@@ -55,6 +56,30 @@ void drawWindow(void);
 void setStatusLine(void);
 
 /*
+ * A sequence will contain the metadata about the particular row
+ *  Reference - https://www.cs.unm.edu/~crowley/papers/sds.pdf
+ *
+ * Linked line approach -
+ *  The document is represented as linked list of different sequences.
+ *  This is better than using a 2D array for document because line insertions
+ *  are pretty easy and termination also, just have to use \0
+ *
+ * prev         - the previous line
+ * sequence_row - the row number at which the sequence is supposed to come
+ * len          - the length of sequence
+ * data         - a pointer to the stored string;
+ * next         - the next line
+ */
+typedef struct
+{
+  struct sequence* prev;
+  int seq_row;
+  int len;
+  char* data;
+  struct sequence* next;
+} sequence;
+
+/*
  * config struct holds all the information related to the current state of
  * editor
  *
@@ -65,6 +90,7 @@ void setStatusLine(void);
  * is_mod   - boolean to check whether the data in editor was modified or not
  * mode     - the mode the editor is opetating in
  * filename - the name of file being currently edited
+ * act_row  - the number of active rows
  */
 typedef struct
 {
@@ -75,22 +101,11 @@ typedef struct
   int is_mod;
   char* mode; // 0 is for NORMAL, 1 is for EDIT
   char* filename;
-  int active_rows;
+  int act_rows; // number of active rows must match the number of sequecnes
+  sequence* first_seq;
+  sequence* current_seq;
 } config;
 
-
-/*
- * Inspired by https://www.cs.unm.edu/~crowley/papers/sds.pdf
- *
- * Each row of the text editor is treated as an independent sequence
- *
- * A sequence will contain the metadata about the 
- *
- */
-typedef struct
-{
-
-} sequence;
 
 /* extern variables go here
  * global so we use suffix g_

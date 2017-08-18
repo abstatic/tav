@@ -22,11 +22,11 @@ int main(int argc, char** argv)
   // first flush all the contents of stdout
   fflush(stdout);
 
-  drawWindow();
 
   signal(SIGWINCH, handle_winresize);
   while (1)
   {
+    drawWindow();
     readKey();
     signal(SIGWINCH, handle_winresize);
   }
