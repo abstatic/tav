@@ -26,7 +26,7 @@
 #define cursorupward(x)     printf("\033[%dA", (x))
 #define cursordownward(x)   printf("\033[%dB", (x))
 #define clrscr              printf("\033c")  //VT100 clear screen without scroll
-#define gotopos(row,col)    printf("\033[%d;%dH", (row), (col))
+#define gotopos(row,col)    printf("\033[%d;%dH", (row), (col)) // gotopos will always be off by one (counts from 0)
 
 // escape characters for keys
 #define ESCAPE              0x001b
@@ -47,13 +47,15 @@
 
 
 // function declaration 
-void getControl(int fd);
-void readKey(void);
-void handleEscapeSequence(void);
-void handle_winresize(int sig);
-void initscr(void);
-void drawWindow(void);
-void setStatusLine(void);
+void getControl(int fd); // to set terminal attributes
+void readKey(void); // master method for reading keys
+void handleEscapeSequence(void); // handling escape seq
+void handle_winresize(int sig); // singal for handling window resizee
+void initscr(void); // initalize the editor config
+void drawWindow(void); // draw the window 
+void setStatusLine(void); // set the status line and go back to your postion
+void modify_seq_len(int); // modify the current sequence length 
+void modify_cur_pos(int, int, int); // modify the cursor position by some value
 
 /*
  * A sequence will contain the metadata about the particular row
@@ -85,8 +87,8 @@ typedef struct
  *
  * w_row    - number of rows supported by window, will change with window resize
  * w_col    - number of cols supported by window, will change with window resize
- * cursor_x - the current x coordinate of cursor
- * curosr_y - the current y coordinate of cursor
+ * cursor_row - the current row coordinate of cursor
+ * curosr_col - the current col coordinate of cursor
  * is_mod   - boolean to check whether the data in editor was modified or not
  * mode     - the mode the editor is opetating in
  * filename - the name of file being currently edited
@@ -96,8 +98,8 @@ typedef struct
 {
   int w_row;
   int w_col;
-  int cursor_x;
-  int cursor_y;
+  int cursor_row;
+  int cursor_col;
   int is_mod;
   char* mode; // 0 is for NORMAL, 1 is for EDIT
   char* filename;

@@ -20,6 +20,8 @@ void getControl(int fd)
 
   n_term = o_term;
 
+  // the input flags are needed to handle the CR LF situation.
+  // New lines are completely handled by the program. Not terminal
   n_term.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
   n_term.c_lflag &= ~(ICANON | ECHO);
 
@@ -58,8 +60,8 @@ void initscr(void)
 
   g_tavProps.w_row       = w.ws_row;
   g_tavProps.w_col       = w.ws_col;
-  g_tavProps.cursor_x    = 0;
-  g_tavProps.cursor_y    = 0;
+  g_tavProps.cursor_row  = 0;
+  g_tavProps.cursor_col  = 0;
   g_tavProps.is_mod      = 0;
   g_tavProps.mode        = DEFAULT_MODE;
   g_tavProps.filename    = DEFAULT_FILE_NAME;
@@ -85,8 +87,8 @@ void drawWindow(void)
   int rows      = g_tavProps.w_row;
   int cols      = g_tavProps.w_col;
   int act_rows  = g_tavProps.act_rows;
-  int current_x = g_tavProps.cursor_x;
-  int current_y = g_tavProps.cursor_y;
+  int current_row = g_tavProps.cursor_row;
+  int current_col = g_tavProps.cursor_col;
 
   // write down all the sequences to the stdout
   sequence* start = g_tavProps.first_seq;
@@ -102,7 +104,7 @@ void drawWindow(void)
     printf("~\n");
 
   setStatusLine();
-  gotopos(current_x, current_y);
+  gotopos(current_row, current_col + 1);
 }
 
 /*
@@ -124,5 +126,5 @@ void setStatusLine(void)
   printf(" %6s |", mode);
   printf(" %s ", filename);
   gotopos(bottom, right_offset);
-  printf("LN %4d:%-3d", g_tavProps.cursor_x + 1, g_tavProps.cursor_y + 1);
+  printf("LN %4d:%-3d", g_tavProps.cursor_row + 1, g_tavProps.cursor_col + 1);
 }
