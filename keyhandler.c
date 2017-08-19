@@ -53,8 +53,19 @@ void readKey(void)
   }
   else if (c == BACKSPACE)
   {
-    // handle backspace here
-    printf("You pressed backspace");
+    // handle backspace here, similar to enter at line end
+    if (cur_col == cur_seq_len)
+    {
+      g_tavProps.current_seq -> data[cur_seq_len-1] = '\0';
+      modify_seq_len(-1);
+      modify_cur_pos(0, -1, 1);
+    }
+    else
+    {
+      insert(g_tavProps.current_seq, cur_col-1, 1, '\0');
+      modify_seq_len(-1);
+      modify_cur_pos(0, -1, 1);
+    }
   }
   else
   {
@@ -87,12 +98,23 @@ void insert(sequence* s, int make_room_at, int room_to_make, char toInsert)
 
   // max length of the sequence
   int len = s -> max_len;
-  memmove (
-      base + make_room_at + room_to_make,
-      base + make_room_at,
-      len - (make_room_at + room_to_make)
-  );
-  base[make_room_at] = toInsert;
+  if (toInsert == '\0')
+  {
+    memmove (
+        base + make_room_at,
+        base + make_room_at + 1,
+        len - (make_room_at + room_to_make)
+    );
+  }
+  else
+  {
+    memmove (
+        base + make_room_at + room_to_make,
+        base + make_room_at,
+        len - (make_room_at + room_to_make)
+    );
+    base[make_room_at] = toInsert;
+  }
 }
 
 /*
@@ -132,7 +154,7 @@ void modify_cur_pos(int row, int col, int KorA)
     // arrow movement was detected
     g_tavProps.cursor_row += row;
     g_tavProps.cursor_col += col;
-    // code for updating the current_seq as welld
+    // code for updating the current_seq as well
     if (row != 0)
     {
       if (row == -1)
@@ -172,9 +194,13 @@ void modify_seq_len(int val)
   g_tavProps.current_seq -> len += val;
   if (g_tavProps.current_seq -> len < 0)
     g_tavProps.current_seq -> len = 0;
-  if (g_tavProps.current_seq -> len > LINE_SIZE - 10)
+
+  // if the array is almost about to exceed the size, reallocate
+  int m_len = g_tavProps.current_seq -> max_len;
+  if (g_tavProps.current_seq -> len > m_len - 10)
   {
-    realloc(g_tavProps.current_seq -> data, LINE_SIZE * 2 * sizeof(char));
+    g_tavProps.current_seq -> data = (char *) realloc(g_tavProps.current_seq -> data, m_len * 2 * sizeof(char));
+    g_tavProps.current_seq -> max_len = m_len * 2;
   }
 }
 

@@ -13,12 +13,10 @@ int main(void)
   int pos = 5;
 
   memmove (
+      h + 5 ,
       h + 5 + 1,
-      h + 5,
       80 - (5 + 1)
   );
-
-  h[5] = 'f';
 
   printf("%s\n", h);
   return 0;

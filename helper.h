@@ -62,6 +62,8 @@
  * max_len      - maximum length posssible of the seq (defined using malloc)
  * data         - a pointer to the stored string;
  * next         - the next line
+ *
+ * This type is defined here so that we can use sequence* in func decl
  */
 typedef struct
 {
