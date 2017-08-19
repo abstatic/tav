@@ -47,18 +47,6 @@
 #define DEFAULT_MODE        "Normal"
 #define LINE_SIZE           80
 
-
-// function declaration 
-void getControl(int fd); // to set terminal attributes
-void readKey(void); // master method for reading keys
-void handleEscapeSequence(void); // handling escape seq
-void handle_winresize(int sig); // singal for handling window resizee
-void initscr(void); // initalize the editor config
-void drawWindow(void); // draw the window 
-void setStatusLine(void); // set the status line and go back to your postion
-void modify_seq_len(int); // modify the current sequence length 
-void modify_cur_pos(int, int, int); // modify the cursor position by some value
-
 /*
  * A sequence will contain the metadata about the particular row
  *  Reference - https://www.cs.unm.edu/~crowley/papers/sds.pdf
@@ -71,6 +59,7 @@ void modify_cur_pos(int, int, int); // modify the cursor position by some value
  * prev         - the previous line
  * sequence_row - the row number at which the sequence is supposed to come
  * len          - the length of sequence
+ * max_len      - maximum length posssible of the seq (defined using malloc)
  * data         - a pointer to the stored string;
  * next         - the next line
  */
@@ -79,9 +68,24 @@ typedef struct
   struct sequence* prev;
   int seq_row;
   int len;
+  int max_len;
   char* data;
   struct sequence* next;
 } sequence;
+
+
+
+// function declaration 
+void getControl(int fd); // to set terminal attributes
+void readKey(void); // master method for reading keys
+void handleEscapeSequence(void); // handling escape seq
+void handle_winresize(int sig); // singal for handling window resizee
+void initscr(void); // initalize the editor config
+void drawWindow(void); // draw the window 
+void setStatusLine(void); // set the status line and go back to your postion
+void modify_seq_len(int); // modify the current sequence length 
+void modify_cur_pos(int, int, int); // modify the cursor position by some value
+void insert(sequence*, int, int, char); // memmove for inserting
 
 /*
  * config struct holds all the information related to the current state of

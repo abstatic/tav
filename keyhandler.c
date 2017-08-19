@@ -37,13 +37,14 @@ void readKey(void)
     {
       sequence* new_seq = malloc(sizeof(sequence));
 
-      new_seq -> prev = g_tavProps.current_seq -> prev;
+      new_seq -> prev    = (struct sequence *) g_tavProps.current_seq;
       new_seq -> seq_row = g_tavProps.current_seq -> seq_row + 1;
-      new_seq -> len    = 0;
-      new_seq -> data   = malloc(LINE_SIZE * sizeof(char));
-      new_seq -> next = g_tavProps.current_seq -> next;
+      new_seq -> len     = 0;
+      new_seq -> max_len = LINE_SIZE;
+      new_seq -> data    = malloc(LINE_SIZE * sizeof(char));
+      new_seq -> next    = g_tavProps.current_seq -> next;
 
-      g_tavProps.current_seq -> next = new_seq;
+      g_tavProps.current_seq -> next = (struct sequence *) new_seq;
       g_tavProps.current_seq = new_seq;
       g_tavProps.act_rows++; // increase the number of active rows by 1
 
@@ -67,7 +68,31 @@ void readKey(void)
       modify_seq_len(1);
       modify_cur_pos(0, 1, 1);
     }
+    else
+    {
+      insert(g_tavProps.current_seq, cur_col, 1, c);
+      modify_seq_len(1);
+      modify_cur_pos(0, 1, 1);
+    }
   }
+}
+
+/*
+ * This method is used to insert the text in between a sequence
+ *
+ */
+void insert(sequence* s, int make_room_at, int room_to_make, char toInsert)
+{
+  char* base = s -> data;
+
+  // max length of the sequence
+  int len = s -> max_len;
+  memmove (
+      base + make_room_at + room_to_make,
+      base + make_room_at,
+      len - (make_room_at + room_to_make)
+  );
+  base[make_room_at] = toInsert;
 }
 
 /*
@@ -90,10 +115,11 @@ void modify_cur_pos(int row, int col, int KorA)
   // else we return
   if (KorA == 0)
   {
-    if (g_tavProps.cursor_row + row > row_limit || g_tavProps.cursor_col + col > col_limit)
+    if (g_tavProps.cursor_row + row >= row_limit || g_tavProps.cursor_col + col > col_limit)
       return;
   }
 
+  // if enter was pressed as a keypress
   if (row == LF)
   {
     g_tavProps.cursor_row += 1;
@@ -102,8 +128,28 @@ void modify_cur_pos(int row, int col, int KorA)
   }
   else
   {
+    // below statements execute when there has been a keypress or a valid
+    // arrow movement was detected
     g_tavProps.cursor_row += row;
     g_tavProps.cursor_col += col;
+    // code for updating the current_seq as welld
+    if (row != 0)
+    {
+      if (row == -1)
+      {
+        if (g_tavProps.current_seq -> prev != NULL)
+        {
+          g_tavProps.current_seq = (sequence *) g_tavProps.current_seq -> prev;
+        }
+      }
+      else
+      {
+        if (g_tavProps.current_seq -> next != NULL)
+          g_tavProps.current_seq = (sequence *) g_tavProps.current_seq -> next;
+      }
+      col_limit = g_tavProps.current_seq -> len;
+    }
+
   }
 
   if (g_tavProps.cursor_row < 0)
@@ -111,6 +157,9 @@ void modify_cur_pos(int row, int col, int KorA)
 
   if (g_tavProps.cursor_col < 0)
     g_tavProps.cursor_col = 0;
+
+  if (g_tavProps.cursor_col > col_limit)
+    g_tavProps.cursor_col = col_limit;
 }
 
 /*
@@ -165,17 +214,23 @@ void handleEscapeSequence(void)
 
     if (key != 0)
     {
-      if (key == UP)
-        modify_cur_pos(-1, 0, 0);
-      else if (key == DOWN)
-        modify_cur_pos(1, 0, 0);
-      else if (key == LEFT)
-        modify_cur_pos(0, -1, 0);
-      else if (key == RIGHT)
-        modify_cur_pos(0, 1, 0);
-      else if (key == DELETE)
-        printf("DEL");
+      switch (key)
+      {
+        case UP:
+          modify_cur_pos(-1, 0, 0);
+          break;
+        case DOWN:
+          modify_cur_pos(1, 0, 0);
+          break;
+        case LEFT:
+          modify_cur_pos(0, -1, 0);
+          break;
+        case RIGHT:
+          modify_cur_pos(0, 1, 0);
+          break;
+        default:
+          printf("Unknown");
+      }
     }
   }
 }
-

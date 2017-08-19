@@ -22,7 +22,6 @@ int main(int argc, char** argv)
   // first flush all the contents of stdout
   fflush(stdout);
 
-
   signal(SIGWINCH, handle_winresize);
   while (1)
   {

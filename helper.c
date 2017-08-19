@@ -73,6 +73,7 @@ void initscr(void)
   g_tavProps.first_seq -> prev    = NULL;
   g_tavProps.first_seq -> seq_row = 1;
   g_tavProps.first_seq -> len     = 0;
+  g_tavProps.first_seq -> max_len = LINE_SIZE;
   g_tavProps.first_seq -> data    = malloc(LINE_SIZE * sizeof(char));
   g_tavProps.first_seq -> next    = NULL;
 
@@ -86,9 +87,9 @@ void initscr(void)
 void drawWindow(void)
 {
   clrscr;
-  int rows      = g_tavProps.w_row;
-  int cols      = g_tavProps.w_col;
-  int act_rows  = g_tavProps.act_rows;
+  int rows        = g_tavProps.w_row;
+  int cols        = g_tavProps.w_col;
+  int act_rows    = g_tavProps.act_rows;
   int current_row = g_tavProps.cursor_row;
   int current_col = g_tavProps.cursor_col;
 
