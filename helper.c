@@ -1,4 +1,5 @@
 /**
+ * helper.c
  *
  * This file contains various helper functions related to TAV text editor
  *
@@ -21,6 +22,7 @@ void getControl(int fd)
   n_term = o_term;
 
   // the input flags are needed to handle the CR LF situation.
+  // Its harder to detect \r\n , \r is easier to catch
   // New lines are completely handled by the program. Not terminal
   n_term.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
   n_term.c_lflag &= ~(ICANON | ECHO);
@@ -70,7 +72,7 @@ void initscr(void)
 
   g_tavProps.first_seq -> prev    = NULL;
   g_tavProps.first_seq -> seq_row = 1;
-  g_tavProps.first_seq -> len    = 0;
+  g_tavProps.first_seq -> len     = 0;
   g_tavProps.first_seq -> data    = malloc(LINE_SIZE * sizeof(char));
   g_tavProps.first_seq -> next    = NULL;
 
@@ -104,7 +106,7 @@ void drawWindow(void)
     printf("~\n");
 
   setStatusLine();
-  gotopos(current_row, current_col + 1);
+  gotopos(current_row+1, current_col + 1); // i have no idea why we need +1 , but its required
 }
 
 /*
@@ -113,7 +115,7 @@ void drawWindow(void)
  */
 void setStatusLine(void)
 {
-  int bottom = g_tavProps.w_row - 1; // last row left for commands and messages
+  int bottom = g_tavProps.w_row; // last row left for commands and messages
   int right_offset = g_tavProps.w_col - 11;
   char* mode = g_tavProps.mode;
   char* filename = g_tavProps.filename;

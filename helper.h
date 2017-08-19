@@ -37,6 +37,8 @@
 #define RIGHT               0x0108
 #define BACKSPACE           0x7f
 #define DELETE              126
+#define LF                  10
+#define CR                  13
 
 // application defaults
 #define NORMAL_MODE         "Normal"

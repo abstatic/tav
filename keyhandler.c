@@ -1,4 +1,5 @@
 /**
+ * keyhandler.c
  *
  * All key handling and reading functions go here
  * Part of the TAV text editor
@@ -18,12 +19,36 @@ void readKey(void)
 
   c = getc(stdin);
 
+  int cur_row = g_tavProps.cursor_row;
+  int cur_col = g_tavProps.cursor_col;
+  int cur_seq_len = g_tavProps.current_seq -> len;
+
   if (c == ESCAPE)
     handleEscapeSequence();
   else if (c == '\r')
   {
-    printf("You pressed enter");
-    // we also need to handle the enter case
+    /* Enter also has three cases
+     * 1. Enter at line ending
+     * 2. Enter at line start
+     * 3. Enter at line middle
+     */
+    // below condition means that we are at the row end
+    if (cur_col == cur_seq_len)
+    {
+      sequence* new_seq = malloc(sizeof(sequence));
+
+      new_seq -> prev = g_tavProps.current_seq -> prev;
+      new_seq -> seq_row = g_tavProps.current_seq -> seq_row + 1;
+      new_seq -> len    = 0;
+      new_seq -> data   = malloc(LINE_SIZE * sizeof(char));
+      new_seq -> next = g_tavProps.current_seq -> next;
+
+      g_tavProps.current_seq -> next = new_seq;
+      g_tavProps.current_seq = new_seq;
+      g_tavProps.act_rows++; // increase the number of active rows by 1
+
+      modify_cur_pos(LF, CR, 1);
+    }
   }
   else if (c == BACKSPACE)
   {
@@ -32,26 +57,21 @@ void readKey(void)
   }
   else
   {
-    putchar(c);
     // append the read character to the end of currrent sequence or the cursor
     // pos?
-    int cur_row = g_tavProps.cursor_row;
-    int cur_col = g_tavProps.cursor_col;
-    int cur_seq_len = g_tavProps.current_seq -> len;
-
     // below condition means that we are inserting at the row end
     if (cur_col == cur_seq_len)
     {
       g_tavProps.current_seq -> data[cur_seq_len] = c;
       g_tavProps.current_seq -> data[cur_seq_len + 1] = '\0';
       modify_seq_len(1);
-      modify_cur_pos(0,1,1);
+      modify_cur_pos(0, 1, 1);
     }
   }
 }
 
 /*
- * This method is used to modify the value 
+ * This method is used to modify the value of cursor positions
  *
  * It also handles the cases related to invalid positions
  * Basically the cursor should not be able to move to invalid locations using
@@ -73,8 +93,18 @@ void modify_cur_pos(int row, int col, int KorA)
     if (g_tavProps.cursor_row + row > row_limit || g_tavProps.cursor_col + col > col_limit)
       return;
   }
-  g_tavProps.cursor_row += row;
-  g_tavProps.cursor_col += col;
+
+  if (row == LF)
+  {
+    g_tavProps.cursor_row += 1;
+    if (col == CR)
+      g_tavProps.cursor_col = 0;
+  }
+  else
+  {
+    g_tavProps.cursor_row += row;
+    g_tavProps.cursor_col += col;
+  }
 
   if (g_tavProps.cursor_row < 0)
     g_tavProps.cursor_row = 0;
