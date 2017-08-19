@@ -12,6 +12,7 @@
  *
  * Depending on the mode and keypress this function will call respective 
  * routines
+ *
  */
 void readKey(void)
 {
@@ -33,23 +34,37 @@ void readKey(void)
      * 3. Enter at line middle
      */
     // below condition means that we are at the row end
+    sequence* new_seq = malloc(sizeof(sequence));
+
+    new_seq -> prev    = (struct sequence *) g_tavProps.current_seq;
+    new_seq -> next    = g_tavProps.current_seq -> next;
+    new_seq -> seq_row = g_tavProps.current_seq -> seq_row + 1;
     if (cur_col == cur_seq_len)
     {
-      sequence* new_seq = malloc(sizeof(sequence));
-
-      new_seq -> prev    = (struct sequence *) g_tavProps.current_seq;
-      new_seq -> seq_row = g_tavProps.current_seq -> seq_row + 1;
       new_seq -> len     = 0;
       new_seq -> max_len = LINE_SIZE;
       new_seq -> data    = malloc(LINE_SIZE * sizeof(char));
-      new_seq -> next    = g_tavProps.current_seq -> next;
+    }
+    else
+    {
+      // since we are pressing enter at the line end its possible that 
+      // the remaining line length > LINE_SIZE. Need to allocate memory as
+      // required
+      new_seq -> len     = g_tavProps.current_seq -> len - cur_col;
+      new_seq -> max_len = new_seq -> len + LINE_SIZE;
+      new_seq -> data    = malloc(new_seq -> max_len * sizeof(char));
 
+      memcpy(new_seq -> data, g_tavProps.current_seq -> data + cur_col, new_seq-> len);
+
+      g_tavProps.current_seq -> len -= new_seq -> len;
+      g_tavProps.current_seq -> data[cur_col] = '\0';
+
+    }
       g_tavProps.current_seq -> next = (struct sequence *) new_seq;
       g_tavProps.current_seq = new_seq;
       g_tavProps.act_rows++; // increase the number of active rows by 1
 
       modify_cur_pos(LF, CR, 1);
-    }
   }
   else if (c == BACKSPACE)
   {
