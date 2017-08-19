@@ -172,7 +172,10 @@ void modify_seq_len(int val)
   g_tavProps.current_seq -> len += val;
   if (g_tavProps.current_seq -> len < 0)
     g_tavProps.current_seq -> len = 0;
-  // TODO - HANDLE THE BUFFER GETTING FILLED CASE
+  if (g_tavProps.current_seq -> len > LINE_SIZE - 10)
+  {
+    realloc(g_tavProps.current_seq -> data, LINE_SIZE * 2 * sizeof(char));
+  }
 }
 
 /*
