@@ -16,93 +16,160 @@
  */
 void readKey(FILE* h)
 {
-  g_tavProps.is_mod = 1;
-  char c;
-
-  if (h == 0)
-    c = getc(stdin);
+  if (strcmp(g_tavProps.mode, NORMAL_MODE) == 0)
+    readKeyNormal();
   else
-    c = getc(h);
-
-  int cur_row     = g_tavProps.cursor_row;
-  int cur_col     = g_tavProps.cursor_col;
-  int cur_seq_len = g_tavProps.current_seq -> len;
-
-  if (c == ESCAPE)
-    handleEscapeSequence();
-  else if (c == '\r')
   {
-    /* Enter also has three cases
-     * 1. Enter at line ending
-     * 2. Enter at line start
-     * 3. Enter at line middle
-     */
-    // below condition means that we are at the row end
-    sequence* new_seq = malloc(sizeof(sequence));
+    g_tavProps.is_mod = 1;
+    char c;
 
-    new_seq -> prev    = (struct sequence *) g_tavProps.current_seq;
-    new_seq -> next    = g_tavProps.current_seq -> next;
-    new_seq -> seq_row = g_tavProps.current_seq -> seq_row + 1;
-
-    if (cur_col == cur_seq_len)
-    {
-      new_seq -> len     = 0;
-      new_seq -> max_len = LINE_SIZE;
-      new_seq -> data    = malloc(LINE_SIZE * sizeof(char));
-    }
+    if (h == 0)
+      c = getc(stdin);
     else
+      c = getc(h);
+
+    int cur_row     = g_tavProps.cursor_row;
+    int cur_col     = g_tavProps.cursor_col;
+    int cur_seq_len = g_tavProps.current_seq -> len;
+
+    if (c == ESCAPE)
+      handleEscapeSequence();
+    else if (c == '\t')
     {
-      /*
-       * since we are pressing enter at the line middle/start its possible that 
-       * the remaining line length > LINE_SIZE. Need to allocate memory as
-       * required.
-       */
-      new_seq -> len     = g_tavProps.current_seq -> len - cur_col;
-      new_seq -> max_len = new_seq -> len + LINE_SIZE;
-      new_seq -> data    = malloc(new_seq -> max_len * sizeof(char));
-
-      // syntax is destination, source, amount to copy
-      memcpy(new_seq -> data, g_tavProps.current_seq -> data + cur_col, new_seq-> len);
-
-      g_tavProps.current_seq -> len -= new_seq -> len;
-      g_tavProps.current_seq -> data[cur_col] = '\0';
-
-      g_tavProps.current_seq -> next -> prev = new_seq;
+      for (int i = 0; i < TAB_LENGTH; i++)
+      {
+        insert(g_tavProps.current_seq, cur_col, 1, ' ');
+        modify_seq_len(1);
+        modify_cur_pos(0, 1, 1);
+      }
     }
-    if (g_tavProps.current_seq -> next)
-      g_tavProps.current_seq -> next -> prev = new_seq;
-    g_tavProps.current_seq -> next = (struct sequence *) new_seq;
-    g_tavProps.current_seq = new_seq;
-    g_tavProps.act_rows++; // increase the number of active rows by 1
+    else if (c == '\r')
+    {
+      /* Enter also has three cases
+       * 1. Enter at line ending
+       * 2. Enter at line start
+       * 3. Enter at line middle
+       */
+      // below condition means that we are at the row end
+      sequence* new_seq = malloc(sizeof(sequence));
+
+      new_seq -> prev    = (struct sequence *) g_tavProps.current_seq;
+      new_seq -> next    = g_tavProps.current_seq -> next;
+      new_seq -> seq_row = g_tavProps.current_seq -> seq_row + 1;
+
+      if (cur_col == cur_seq_len)
+      {
+        new_seq -> len     = 0;
+        new_seq -> max_len = LINE_SIZE;
+        new_seq -> data    = malloc(LINE_SIZE * sizeof(char));
+      }
+      else
+      {
+        /*
+         * since we are pressing enter at the line middle/start its possible that 
+         * the remaining line length > LINE_SIZE. Need to allocate memory as
+         * required.
+         */
+        new_seq -> len     = g_tavProps.current_seq -> len - cur_col;
+        new_seq -> max_len = new_seq -> len + LINE_SIZE;
+        new_seq -> data    = malloc(new_seq -> max_len * sizeof(char));
+
+        // syntax is destination, source, amount to copy
+        memcpy(new_seq -> data, g_tavProps.current_seq -> data + cur_col, new_seq-> len);
+
+        g_tavProps.current_seq -> len -= new_seq -> len;
+        g_tavProps.current_seq -> data[cur_col] = '\0';
+
+        g_tavProps.current_seq -> next -> prev = new_seq;
+      }
+      if (g_tavProps.current_seq -> next)
+        g_tavProps.current_seq -> next -> prev = new_seq;
+      g_tavProps.current_seq -> next = (struct sequence *) new_seq;
+      g_tavProps.current_seq = new_seq;
+      g_tavProps.act_rows++; // increase the number of active rows by 1
 
       modify_cur_pos(LF, CR, 1);
-  }
-  else if (c == BACKSPACE)
-  {
-    // handle backspace here, similar to enter at line end
-    if (cur_col == cur_seq_len)
-      g_tavProps.current_seq -> data[cur_seq_len-1] = '\0';
-    else
-      insert(g_tavProps.current_seq, cur_col-1, 1, '\0');
-
-    modify_seq_len(-1);
-    modify_cur_pos(0, -1, 1);
-  }
-  else
-  {
-    // append the read character to the end of currrent sequence or the cursor
-    // pos?
-    // below condition means that we are inserting at the row end
-    if (cur_col == cur_seq_len)
+    }
+    else if (c == BACKSPACE)
     {
-      g_tavProps.current_seq -> data[cur_seq_len] = c;
-      g_tavProps.current_seq -> data[cur_seq_len + 1] = '\0';
+      // handle backspace here, similar to enter at line end
+      if (cur_col == cur_seq_len)
+        g_tavProps.current_seq -> data[cur_seq_len-1] = '\0';
+      else
+        insert(g_tavProps.current_seq, cur_col-1, 1, '\0');
+
+      modify_seq_len(-1);
+      modify_cur_pos(0, -1, 1);
     }
     else
-      insert(g_tavProps.current_seq, cur_col, 1, c);
+    {
+      // append the read character to the end of currrent sequence or the cursor
+      // pos?
+      // below condition means that we are inserting at the row end
+      if (cur_col == cur_seq_len)
+      {
+        g_tavProps.current_seq -> data[cur_seq_len] = c;
+        g_tavProps.current_seq -> data[cur_seq_len + 1] = '\0';
+      }
+      else
+        insert(g_tavProps.current_seq, cur_col, 1, c);
 
-    modify_seq_len(1);
-    modify_cur_pos(0, 1, 1);
+      modify_seq_len(1);
+      modify_cur_pos(0, 1, 1);
+    }
+  }
+}
+
+/*
+ * This method is used to readKey in normal mode
+ *
+ */
+void readKeyNormal(void)
+{
+  char c;
+  c = getc(stdin);
+
+  switch (c)
+  {
+    case 'i':
+    case 'I':
+      g_tavProps.mode = INSERT_MODE;
+      break;
+    case ESCAPE:
+      handleEscapeSequence();
+      break;
+    case 'h':
+    case 'H':
+      // go left
+      modify_cur_pos(0, -1, 0);
+      break;
+    case 'k':
+    case 'K':
+      // go up
+      modify_cur_pos(-1, 0, 0);
+      break;
+    case 'j':
+    case 'J':
+      // go down
+      modify_cur_pos(1, 0, 0);
+      break;
+    case 'l':
+    case 'L':
+      // go right;
+      modify_cur_pos(0, 1, 0);
+      break;
+    case 'r':
+      replace();
+      break;
+    case 'G':
+      // go to document end
+      break;
+    case 'g':
+      // go to document start
+      break;
+    case ':':
+      interpretCommand();
+      break;
   }
 }
 
@@ -285,4 +352,6 @@ void handleEscapeSequence(void)
       }
     }
   }
+  else if (c == ESCAPE)
+    g_tavProps.mode = NORMAL_MODE;
 }

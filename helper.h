@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <signal.h>
+#include <ctype.h>
 
 // macros for escape sequences go here
 #define cursorforward(x)    printf("\033[%dD", (x))
@@ -43,9 +44,12 @@
 // application defaults
 #define NORMAL_MODE         "Normal"
 #define INSERT_MODE         "Insert"
+#define REPLACE_MODE        "Replace"
 #define DEFAULT_FILE_NAME   "[NoName]"
 #define DEFAULT_MODE        "Normal"
+#define CMD_LEN             10
 #define LINE_SIZE           80
+#define TAB_LENGTH          4
 
 /*
  * A sequence will contain the metadata about the particular row
@@ -89,6 +93,11 @@ void modify_seq_len(int); // modify the current sequence length
 void modify_cur_pos(int, int, int); // modify the cursor position by some value
 void insert(sequence*, int, int, char); // memmove for inserting
 int readFile(char*); // read the files
+void readKeyNormal(void); // this method is used to read charactes in normal mode
+void replace(void); // replace the text under the cursor
+void interpretCommand(void); // to handle the command mode
+void exit_safely(void); // to safely exit the editor
+void writeFile(void); // method to write the file to disk
 
 /*
  * config struct holds all the information related to the current state of
@@ -101,7 +110,13 @@ int readFile(char*); // read the files
  * is_mod   - boolean to check whether the data in editor was modified or not
  * mode     - the mode the editor is opetating in
  * filename - the name of file being currently edited
- * act_row  - the number of active rows
+ * openfile - filepointer to the open file
+ * act_rows - the number of active rows
+ * cmd_buf  - the command buffer, which holds the text displated at bottom
+ * first_seq- pointer to the first sequence of doc
+ * current_seq- pointer to the sequence with the cursor on it
+ * o_term - old terminal props
+ * n_term - new terminal props
  */
 typedef struct
 {
@@ -112,9 +127,13 @@ typedef struct
   int is_mod;
   char* mode; // 0 is for NORMAL, 1 is for EDIT
   char* filename;
+  FILE* openFile;
   int act_rows; // number of active rows must match the number of sequecnes
+  char* cmd_buf;
   sequence* first_seq;
   sequence* current_seq;
+  struct termios o_term;
+  struct termios n_term;
 } config;
 
 

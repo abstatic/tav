@@ -16,21 +16,20 @@
  */
 void getControl(int fd)
 {
-  struct termios o_term, n_term;
-  tcgetattr(fd, &o_term);
+  tcgetattr(fd, &g_tavProps.o_term);
 
-  n_term = o_term;
+  g_tavProps.n_term = g_tavProps.o_term;
 
   // the input flags are needed to handle the CR LF situation.
   // Its harder to detect \r\n , \r is easier to catch
   // New lines are completely handled by the program. Not terminal
-  n_term.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
-  n_term.c_lflag &= ~(ICANON | ECHO);
+  g_tavProps.n_term.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
+  g_tavProps.n_term.c_lflag &= ~(ICANON | ECHO);
 
-  n_term.c_cc[VTIME] = 0;
-  n_term.c_cc[VMIN] = 1;
+  g_tavProps.n_term.c_cc[VTIME] = 0;
+  g_tavProps.n_term.c_cc[VMIN] = 1;
   // TCSANOW means apply the changes immediately
-  tcsetattr(fd, TCSANOW, &n_term);
+  tcsetattr(fd, TCSANOW, &g_tavProps.n_term);
 }
 
 /*
@@ -68,6 +67,7 @@ void initscr(void)
   g_tavProps.mode        = DEFAULT_MODE;
   g_tavProps.filename    = DEFAULT_FILE_NAME;
   g_tavProps.act_rows    = 1;
+  g_tavProps.cmd_buf     = calloc(CMD_LEN, sizeof(char));
   g_tavProps.first_seq   = malloc(sizeof(sequence));
 
   g_tavProps.first_seq -> prev    = NULL;
@@ -124,12 +124,108 @@ void setStatusLine(void)
 
   // go to the right postion of status line
   gotopos(bottom, 0);
-  printf(" %6s |", mode);
-  if (g_tavProps.is_mod)
-    printf(" %s* ", filename);
+  if (strlen(g_tavProps.cmd_buf) == 0)
+  {
+    printf(" %6s |", mode);
+    if (g_tavProps.is_mod)
+      printf(" %s* ", filename);
+    else
+      printf(" %s ", filename);
+  }
   else
-    printf(" %s ", filename);
+  {
+    printf("%s", g_tavProps.cmd_buf);
+    printf(" %ld", strlen(g_tavProps.cmd_buf));
+  }
 
   gotopos(bottom, right_offset);
   printf("LN %4d:%-3d", g_tavProps.cursor_row + 1, g_tavProps.cursor_col + 1);
+}
+
+/*
+ * Replace the character right under
+ */
+void replace(void)
+{
+  g_tavProps.mode = REPLACE_MODE;
+  drawWindow(); // because i want my replace mode written
+  char c;
+  c = getc(stdin);
+
+  int col = g_tavProps.cursor_col;
+
+  if (isalnum(c))
+    g_tavProps.current_seq -> data[col] = c;
+  g_tavProps.mode = NORMAL_MODE;
+}
+
+
+/*
+ * This function helps in interpreting and processing the command
+ * at the last line
+ *
+ * Idea- Just change the contents at he memory location of cmd_buf
+ */
+void interpretCommand(void)
+{
+  char c;
+  g_tavProps.cmd_buf[0] = ':';
+  drawWindow();
+  int i = 1;
+  while (1)
+  {
+    c = getc(stdin);
+    if (c == ESCAPE)
+    {
+      g_tavProps.cmd_buf[0] = '\0';
+      return;
+    }
+    else if (c == '\r')
+      break;
+
+    g_tavProps.cmd_buf[i] = c;
+    i++;
+    drawWindow();
+  }
+
+  char inp = g_tavProps.cmd_buf[1];
+
+  switch (inp)
+  {
+    case 'w':
+      //write the damned file
+      writeFile();
+      break;
+    case 'q':
+      // check if not dirty then save else wait and show error message
+      // also check for force quit
+      if (g_tavProps.cmd_buf[2] == '!' || g_tavProps.is_mod == 0)
+        exit_safely();
+      else
+      {
+
+      }
+      break;
+    case '!':
+      // try to execute the bash command
+      break;
+    default:
+      printf("h");
+      // default case
+  }
+
+  g_tavProps.cmd_buf[0] = '\0';
+}
+
+/**
+ * This method is used to safely exit from tav after setting back the original
+ * parameters of the terminal
+ */
+void exit_safely(void)
+{
+  int fd = STDOUT_FILENO;
+  fclose(g_tavProps.openFile);
+  tcsetattr(fd, TCSANOW, &g_tavProps.o_term);
+  clrscr;
+  exit(0);
 }

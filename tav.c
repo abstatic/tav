@@ -16,9 +16,7 @@ int main(int argc, char** argv)
   if (argc == 2)
   {
     g_tavProps.filename = argv[1];
-    int r = readFile(g_tavProps.filename);
-    if (r == 0)
-      exit(1);
+    readFile(g_tavProps.filename);
   }
 
   // enable the non canonical mode with all the required flags
