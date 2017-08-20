@@ -113,21 +113,23 @@ void drawWindow(void)
 /*
  * This method is used to set the status line in TAV
  *
+ * If the file is dirty, set a * too
  */
 void setStatusLine(void)
 {
-  int bottom = g_tavProps.w_row; // last row left for commands and messages
+  int bottom       = g_tavProps.w_row; // last row left for commands and messages
   int right_offset = g_tavProps.w_col - 11;
-  char* mode = g_tavProps.mode;
-  char* filename = g_tavProps.filename;
-
-  if (g_tavProps.is_mod)
-    filename += '*';
+  char* mode       = g_tavProps.mode;
+  char* filename   = g_tavProps.filename;
 
   // go to the right postion of status line
   gotopos(bottom, 0);
   printf(" %6s |", mode);
-  printf(" %s ", filename);
+  if (g_tavProps.is_mod)
+    printf(" %s* ", filename);
+  else
+    printf(" %s ", filename);
+
   gotopos(bottom, right_offset);
   printf("LN %4d:%-3d", g_tavProps.cursor_row + 1, g_tavProps.cursor_col + 1);
 }

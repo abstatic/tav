@@ -14,7 +14,12 @@ int main(int argc, char** argv)
   initscr();
 
   if (argc == 2)
+  {
     g_tavProps.filename = argv[1];
+    int r = readFile(g_tavProps.filename);
+    if (r == 0)
+      exit(1);
+  }
 
   // enable the non canonical mode with all the required flags
   getControl(STDIN_FILENO);
@@ -26,7 +31,7 @@ int main(int argc, char** argv)
   while (1)
   {
     drawWindow();
-    readKey();
+    readKey(STDIN_FILENO);
     signal(SIGWINCH, handle_winresize);
   }
   return 0;

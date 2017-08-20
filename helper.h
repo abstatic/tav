@@ -49,7 +49,7 @@
 
 /*
  * A sequence will contain the metadata about the particular row
- *  Reference - https://www.cs.unm.edu/~crowley/papers/sds.pdf
+ * Reference - https://www.cs.unm.edu/~crowley/papers/sds.pdf
  *
  * Linked line approach -
  *  The document is represented as linked list of different sequences.
@@ -65,7 +65,7 @@
  *
  * This type is defined here so that we can use sequence* in func decl
  */
-typedef struct
+typedef struct sequence
 {
   struct sequence* prev;
   int seq_row;
@@ -79,7 +79,7 @@ typedef struct
 
 // function declaration 
 void getControl(int fd); // to set terminal attributes
-void readKey(void); // master method for reading keys
+void readKey(FILE*); // master method for reading keys
 void handleEscapeSequence(void); // handling escape seq
 void handle_winresize(int sig); // singal for handling window resizee
 void initscr(void); // initalize the editor config
@@ -88,6 +88,7 @@ void setStatusLine(void); // set the status line and go back to your postion
 void modify_seq_len(int); // modify the current sequence length 
 void modify_cur_pos(int, int, int); // modify the cursor position by some value
 void insert(sequence*, int, int, char); // memmove for inserting
+int readFile(char*); // read the files
 
 /*
  * config struct holds all the information related to the current state of

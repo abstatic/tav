@@ -14,14 +14,18 @@
  * routines
  *
  */
-void readKey(void)
+void readKey(FILE* h)
 {
+  g_tavProps.is_mod = 1;
   char c;
 
-  c = getc(stdin);
+  if (h == 0)
+    c = getc(stdin);
+  else
+    c = getc(h);
 
-  int cur_row = g_tavProps.cursor_row;
-  int cur_col = g_tavProps.cursor_col;
+  int cur_row     = g_tavProps.cursor_row;
+  int cur_col     = g_tavProps.cursor_col;
   int cur_seq_len = g_tavProps.current_seq -> len;
 
   if (c == ESCAPE)
@@ -39,6 +43,7 @@ void readKey(void)
     new_seq -> prev    = (struct sequence *) g_tavProps.current_seq;
     new_seq -> next    = g_tavProps.current_seq -> next;
     new_seq -> seq_row = g_tavProps.current_seq -> seq_row + 1;
+
     if (cur_col == cur_seq_len)
     {
       new_seq -> len     = 0;
@@ -47,22 +52,28 @@ void readKey(void)
     }
     else
     {
-      // since we are pressing enter at the line end its possible that 
-      // the remaining line length > LINE_SIZE. Need to allocate memory as
-      // required
+      /*
+       * since we are pressing enter at the line middle/start its possible that 
+       * the remaining line length > LINE_SIZE. Need to allocate memory as
+       * required.
+       */
       new_seq -> len     = g_tavProps.current_seq -> len - cur_col;
       new_seq -> max_len = new_seq -> len + LINE_SIZE;
       new_seq -> data    = malloc(new_seq -> max_len * sizeof(char));
 
+      // syntax is destination, source, amount to copy
       memcpy(new_seq -> data, g_tavProps.current_seq -> data + cur_col, new_seq-> len);
 
       g_tavProps.current_seq -> len -= new_seq -> len;
       g_tavProps.current_seq -> data[cur_col] = '\0';
 
+      g_tavProps.current_seq -> next -> prev = new_seq;
     }
-      g_tavProps.current_seq -> next = (struct sequence *) new_seq;
-      g_tavProps.current_seq = new_seq;
-      g_tavProps.act_rows++; // increase the number of active rows by 1
+    if (g_tavProps.current_seq -> next)
+      g_tavProps.current_seq -> next -> prev = new_seq;
+    g_tavProps.current_seq -> next = (struct sequence *) new_seq;
+    g_tavProps.current_seq = new_seq;
+    g_tavProps.act_rows++; // increase the number of active rows by 1
 
       modify_cur_pos(LF, CR, 1);
   }
@@ -70,17 +81,12 @@ void readKey(void)
   {
     // handle backspace here, similar to enter at line end
     if (cur_col == cur_seq_len)
-    {
       g_tavProps.current_seq -> data[cur_seq_len-1] = '\0';
-      modify_seq_len(-1);
-      modify_cur_pos(0, -1, 1);
-    }
     else
-    {
       insert(g_tavProps.current_seq, cur_col-1, 1, '\0');
-      modify_seq_len(-1);
-      modify_cur_pos(0, -1, 1);
-    }
+
+    modify_seq_len(-1);
+    modify_cur_pos(0, -1, 1);
   }
   else
   {
@@ -91,21 +97,23 @@ void readKey(void)
     {
       g_tavProps.current_seq -> data[cur_seq_len] = c;
       g_tavProps.current_seq -> data[cur_seq_len + 1] = '\0';
-      modify_seq_len(1);
-      modify_cur_pos(0, 1, 1);
     }
     else
-    {
       insert(g_tavProps.current_seq, cur_col, 1, c);
-      modify_seq_len(1);
-      modify_cur_pos(0, 1, 1);
-    }
+
+    modify_seq_len(1);
+    modify_cur_pos(0, 1, 1);
   }
 }
 
 /*
  * This method is used to insert the text in between a sequence
+ * syntax for memmove was inspired by a stackoverflow post
  *
+ * @param s:            The sequence in which we want to insert
+ * @param make_room_at: position in which we want to insert
+ * @param room_to_make: amount of room to make
+ * @param toInsert:     char value to insert, '\0' indicates a backspace
  */
 void insert(sequence* s, int make_room_at, int room_to_make, char toInsert)
 {
@@ -113,6 +121,7 @@ void insert(sequence* s, int make_room_at, int room_to_make, char toInsert)
 
   // max length of the sequence
   int len = s -> max_len;
+
   if (toInsert == '\0')
   {
     memmove (
@@ -175,9 +184,7 @@ void modify_cur_pos(int row, int col, int KorA)
       if (row == -1)
       {
         if (g_tavProps.current_seq -> prev != NULL)
-        {
           g_tavProps.current_seq = (sequence *) g_tavProps.current_seq -> prev;
-        }
       }
       else
       {
@@ -186,7 +193,6 @@ void modify_cur_pos(int row, int col, int KorA)
       }
       col_limit = g_tavProps.current_seq -> len;
     }
-
   }
 
   if (g_tavProps.cursor_row < 0)
@@ -207,11 +213,13 @@ void modify_cur_pos(int row, int col, int KorA)
 void modify_seq_len(int val)
 {
   g_tavProps.current_seq -> len += val;
+
   if (g_tavProps.current_seq -> len < 0)
     g_tavProps.current_seq -> len = 0;
 
   // if the array is almost about to exceed the size, reallocate
   int m_len = g_tavProps.current_seq -> max_len;
+
   if (g_tavProps.current_seq -> len > m_len - 10)
   {
     g_tavProps.current_seq -> data = (char *) realloc(g_tavProps.current_seq -> data, m_len * 2 * sizeof(char));
