@@ -57,6 +57,7 @@
 /*
  * A sequence will contain the metadata about the particular row
  * Reference - https://www.cs.unm.edu/~crowley/papers/sds.pdf
+ * And the original Vi editor
  *
  * Linked line approach -
  *  The document is represented as linked list of different sequences.

@@ -80,9 +80,8 @@ void readKey(FILE* h)
         g_tavProps.current_seq -> len -= new_seq -> len;
         g_tavProps.current_seq -> data[cur_col] = '\0';
 
-        g_tavProps.current_seq -> next -> prev = new_seq;
       }
-      if (g_tavProps.current_seq -> next)
+      if (g_tavProps.current_seq -> next != NULL)
         g_tavProps.current_seq -> next -> prev = new_seq;
       g_tavProps.current_seq -> next = (struct sequence *) new_seq;
       g_tavProps.current_seq = new_seq;

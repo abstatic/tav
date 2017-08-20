@@ -133,10 +133,7 @@ void setStatusLine(void)
       printf(" %s ", filename);
   }
   else
-  {
     printf("%s", g_tavProps.cmd_buf);
-    printf(" %ld", strlen(g_tavProps.cmd_buf));
-  }
 
   gotopos(bottom, right_offset);
   printf("LN %4d:%-3d", g_tavProps.cursor_row + 1, g_tavProps.cursor_col + 1);

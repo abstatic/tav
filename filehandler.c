@@ -63,6 +63,9 @@ int readFile(char* filename)
   // free because getline allocated the required memory to store it
   if (line)
       free(line);
+  // needed because while loop runs one extra time than intended 
+  // while reading the file 
+  g_tavProps.act_rows--; 
   return 1;
 }
 
