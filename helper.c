@@ -177,14 +177,23 @@ void interpretCommand(void)
     c = getc(stdin);
     if (c == ESCAPE)
     {
-      g_tavProps.cmd_buf[0] = '\0';
+      memset(g_tavProps.cmd_buf, '\0', CMD_LEN);
       return;
     }
     else if (c == '\r')
       break;
-
-    g_tavProps.cmd_buf[i] = c;
-    i++;
+    else if (c == BACKSPACE)
+    {
+      g_tavProps.cmd_buf[i-1] = '\0';
+      i--;
+    }
+    else
+    {
+      g_tavProps.cmd_buf[i] = c;
+      i++;
+    }
+    if (i < 0)
+      i = 0;
     drawWindow();
   }
 
@@ -208,13 +217,14 @@ void interpretCommand(void)
       break;
     case '!':
       // try to execute the bash command
+      executeBash();
+      memset(g_tavProps.cmd_buf, '\0', CMD_LEN);
       break;
     default:
       printf("h");
       // default case
   }
-
-  g_tavProps.cmd_buf[0] = '\0';
+  memset(g_tavProps.cmd_buf, '\0', CMD_LEN);
 }
 
 /**

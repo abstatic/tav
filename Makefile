@@ -18,7 +18,7 @@ CFLAGS = $(CC_OPTIONS)
 ## target all only link after the object files have been created
 ## prerequisite is files that are used as input to create the target
 all:
-	$(CC) $(CC_OPTIONS) -o tav tav.c helper.c keyhandler.c filehandler.c
+	$(CC) $(CC_OPTIONS) -o tav tav.c helper.c keyhandler.c filehandler.c shell.c
 
 clean:
 	rm tav

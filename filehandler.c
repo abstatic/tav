@@ -20,10 +20,10 @@
  */
 int readFile(char* filename)
 {
-  g_tavProps.openFile = fopen(filename, "r");
+  g_tavProps.openFile = fopen(filename, "a+");
 
   if (g_tavProps.openFile == NULL)
-    return 0;
+    exit(1); // some serious error
 
   char* line = malloc(1024 * sizeof(char));
 
@@ -66,8 +66,21 @@ int readFile(char* filename)
   return 1;
 }
 
-
+/**
+ * This method is used to write to the file
+ *
+ * Also we need to rewind the file desecriptor. As the saving methhod is to
+ * save most of the file by rewriting approach
+ */
 void writeFile()
 {
-  
+  sequence* start = g_tavProps.first_seq;
+  rewind(g_tavProps.openFile);
+
+  while (start != NULL)
+  {
+    fprintf(g_tavProps.openFile, "%s\n", start -> data);
+    start = start -> next;
+  }
+  g_tavProps.is_mod = 0;
 }

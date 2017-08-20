@@ -17,9 +17,12 @@
 #include <termios.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <signal.h>
 #include <ctype.h>
+
 
 // macros for escape sequences go here
 #define cursorforward(x)    printf("\033[%dD", (x))
@@ -98,6 +101,7 @@ void replace(void); // replace the text under the cursor
 void interpretCommand(void); // to handle the command mode
 void exit_safely(void); // to safely exit the editor
 void writeFile(void); // method to write the file to disk
+void executeBash(); // execute the bash command input
 
 /*
  * config struct holds all the information related to the current state of
