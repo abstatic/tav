@@ -2,12 +2,18 @@
 
 Welcome to TAV! Tav is a minimalistic vi like editor with the following features-
 
-**1. Editing Modes**- Insert/Edit, Normal Mode, Command Mode
-**2. Save** - Use :w to save. Tav won't let you quit with unsave data.
-**3. Navigation** - Navigation using arrow and h,j,k,l characters to navigate around or scroll
-**4. Single Character Replace**
-**5. Go to first line, go to last line**- Using gg and G
-**6. Deletion** - Deletion using Backspace key.
+**1. Editing Modes**- Insert/Edit, Normal Mode, Command Mode  
+
+**2. Save** - Use :w to save. Tav won't let you quit with unsave data.  
+
+**3. Navigation** - Navigation using arrow and h,j,k,l characters to navigate around or scroll  
+
+**4. Single Character Replace**  
+
+**5. Go to first line, go to last line**- Using gg and G  
+
+**6. Deletion** - Deletion using Backspace key.  
+
 
 ##Design-
 Data structure and text rendering are at the heart of any text editor, we will look at how TAV handles them.
