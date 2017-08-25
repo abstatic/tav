@@ -46,6 +46,12 @@ void handle_winresize(int sig)
   // store the windows sizei nto the props struct
   g_tavProps.w_row = w.ws_row;
   g_tavProps.w_col = w.ws_col;
+  /* g_tavProps.end_line = g_tavProps.w_row -  */
+  g_tavProps.start_line  = 1;
+  g_tavProps.end_line    = w.ws_row + g_tavProps.start_line - 2; // one extra line for status
+  g_tavProps.current_seq = g_tavProps.first_seq;
+  g_tavProps.cursor_row  = 0;
+  g_tavProps.cursor_col  = 0;
   drawWindow();
 }
 
@@ -74,14 +80,64 @@ void initscr(void)
   g_tavProps.first_seq -> seq_row = 1;
   g_tavProps.first_seq -> len     = 0;
   g_tavProps.first_seq -> max_len = LINE_SIZE;
-  g_tavProps.first_seq -> data    = malloc(LINE_SIZE * sizeof(char));
+  g_tavProps.first_seq -> data    = calloc(LINE_SIZE , sizeof(char));
   g_tavProps.first_seq -> next    = NULL;
 
   g_tavProps.current_seq = g_tavProps.first_seq;
+
+  g_tavProps.start_line  = 1;
+  g_tavProps.end_line    = w.ws_row + g_tavProps.start_line - 2; // one extra line for status
+  g_tavProps.actual_row  = 1;
+  g_tavProps.actual_col  = 0;
 }
 
+/**
+ *
+ * This method is used to handle the gg and G commands
+ *
+ * @param pos: -1 indicates document top, 1 for doc end
+ */
+void gHandler(int pos)
+{
+  if (pos == -1)
+  {
+    g_tavProps.start_line  = 1;
+    g_tavProps.end_line    = g_tavProps.w_row + g_tavProps.start_line - 2; //extra line for status
+    g_tavProps.current_seq = g_tavProps.first_seq;
+    g_tavProps.cursor_row  = 0;
+    g_tavProps.cursor_col  = 0;
+    g_tavProps.actual_row  = 1;
+    g_tavProps.actual_col  = 0;
+    drawWindow();
+  }
+  else
+  {
+    /* asm("int $3"); */
+    // in case of G we need to go the last line
+    sequence* temp = g_tavProps.current_seq;
+    while (temp -> next != NULL)
+      temp = temp -> next;
+
+    // we are at the last sequence
+    g_tavProps.current_seq = temp;
+    g_tavProps.start_line  = g_tavProps.current_seq -> seq_row - g_tavProps.act_rows + 1;
+    g_tavProps.end_line    = g_tavProps.current_seq -> seq_row;
+    g_tavProps.cursor_col  = 0;
+    g_tavProps.actual_row  = g_tavProps.end_line - g_tavProps.start_line;
+    g_tavProps.actual_col  = 0;
+
+    if (g_tavProps.start_line <= 0)
+    {
+      g_tavProps.start_line = 1;
+      g_tavProps.end_line   = g_tavProps.w_row + g_tavProps.start_line - 2; // one extra line for status
+      g_tavProps.actual_row = g_tavProps.act_rows - 1;
+    }
+    g_tavProps.cursor_row = g_tavProps.current_seq -> seq_row - 1;
+    g_tavProps.actual_row--;
+  }
+}
 /*
- * This method is used to refresh all the screen contents
+ * This method is used to redraw all the screen contents
  *
  */
 void drawWindow(void)
@@ -90,24 +146,38 @@ void drawWindow(void)
   int rows        = g_tavProps.w_row;
   int cols        = g_tavProps.w_col;
   int act_rows    = g_tavProps.act_rows;
-  int current_row = g_tavProps.cursor_row;
+  int current_row = g_tavProps.actual_row - 1;
   int current_col = g_tavProps.cursor_col;
 
   // write down all the sequences to the stdout
   sequence* start = g_tavProps.first_seq;
 
+  // actual row has to be between 1 and w_row
+  if (g_tavProps.actual_row <= 0)
+    g_tavProps.actual_row = 1;
+  current_row = g_tavProps.actual_row - 1;
+
   while (start != NULL)
   {
-    printf("%s\n", start -> data);
+
+    int i = 0;
+    if (start -> seq_row >= g_tavProps.start_line && start -> seq_row <= g_tavProps.end_line)
+    {
+      if (LINE_NUMBERS)
+        printf(RED "%d" RESET, start -> seq_row);
+      while(start -> data[i])
+        printf("%c", start -> data[i++]);
+      printf("\n");
+    }
     start = (sequence*) start -> next;
   }
 
-  gotopos(act_rows+1,0);
+  gotopos(act_rows + 1, 0);
   for (int i = 1; i < rows-act_rows; i++)
     printf("~\n");
 
   setStatusLine();
-  gotopos(current_row+1, current_col + 1); // i have no idea why we need +1 , but its required
+  gotopos(current_row + 1, current_col + 1); // i have no idea why we need +1 , but its required
 }
 
 /*
@@ -126,17 +196,17 @@ void setStatusLine(void)
   gotopos(bottom, 0);
   if (strlen(g_tavProps.cmd_buf) == 0)
   {
-    printf(" %6s |", mode);
+    printf(GRN " %6s | %d-%d-%d-%d" RESET, mode, g_tavProps.cursor_row, g_tavProps.actual_row, g_tavProps.current_seq -> seq_row, g_tavProps.start_line);
     if (g_tavProps.is_mod)
-      printf(" %s* ", filename);
+      printf(RED " %s* " RESET, filename);
     else
-      printf(" %s ", filename);
+      printf(GRN" %s " RESET, filename);
   }
   else
-    printf("%s", g_tavProps.cmd_buf);
+    printf(YEL "%s" RESET, g_tavProps.cmd_buf);
 
   gotopos(bottom, right_offset);
-  printf("LN %4d:%-3d", g_tavProps.cursor_row + 1, g_tavProps.cursor_col + 1);
+  printf(GRN "LN %4d:%-3d" RESET, g_tavProps.current_seq -> seq_row, g_tavProps.cursor_col + 1);
 }
 
 /*
@@ -209,7 +279,10 @@ void interpretCommand(void)
         exit_safely();
       else
       {
-
+        sprintf(g_tavProps.cmd_buf, "You have unsaved changes. Press q! to exit without saving");
+        drawWindow();
+        getchar();
+        memset(g_tavProps.cmd_buf, '\0', CMD_LEN);
       }
       break;
     case '!':
@@ -218,7 +291,7 @@ void interpretCommand(void)
       memset(g_tavProps.cmd_buf, '\0', CMD_LEN);
       break;
     default:
-      printf("h");
+      printf("h"); // does nothing
       // default case
   }
   memset(g_tavProps.cmd_buf, '\0', CMD_LEN);
@@ -231,8 +304,27 @@ void interpretCommand(void)
 void exit_safely(void)
 {
   int fd = STDOUT_FILENO;
-  fclose(g_tavProps.openFile);
+  /* if (g_tavProps.openFile != NULL) */
+    /* fclose(g_tavProps.openFile); */
   tcsetattr(fd, TCSANOW, &g_tavProps.o_term);
   clrscr;
   exit(0);
+}
+
+/**
+ *
+ * This method is used to increment the row number by 'amnt' starting from 
+ * sequence 'start'
+ *
+ * @param start: pointer to sequence from where the row numbers have to be
+ * incremented
+ * @param amnt: the amount by which the row numbers have to be decremented
+ */
+void updateRowNumber(sequence* start, int amnt)
+{
+  while (start != NULL)
+  {
+    start->seq_row += amnt;
+    start = start -> next;
+  }
 }

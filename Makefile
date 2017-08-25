@@ -6,7 +6,7 @@
 EXE = tav
 
 ## SRC is the list of .c files we need to build our program
-SRC = helper.c tav.c
+SRC = helper.c tav.c keyhandler.c filehandler.c shell.c
 
 ## Tell make to use gcc to compile
 CC = gcc
@@ -18,7 +18,11 @@ CFLAGS = $(CC_OPTIONS)
 ## target all only link after the object files have been created
 ## prerequisite is files that are used as input to create the target
 all:
-	$(CC) $(CC_OPTIONS) -o tav tav.c helper.c keyhandler.c filehandler.c shell.c
+	$(CC) $(CC_OPTIONS) -o $(EXE) $(SRC)
+
+run:
+	$(CC) $(CC_OPTIONS) -o $(EXE) $(SRC)
+	./$(EXE)
 
 clean:
 	rm tav

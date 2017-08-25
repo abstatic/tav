@@ -49,8 +49,6 @@ void readKey(FILE* h)
        * 1. Enter at line ending
        * 2. Enter at line start
        * 3. Enter at line middle
-       *
-       * Have to update all the corresponding row numbers correctly!!
        */
       // below condition means that we are at the row end
       sequence* new_seq = malloc(sizeof(sequence));
@@ -59,13 +57,11 @@ void readKey(FILE* h)
       new_seq -> next    = g_tavProps.current_seq -> next;
       new_seq -> seq_row = g_tavProps.current_seq -> seq_row + 1;
 
-      updateRowNumber(g_tavProps.current_seq -> next, 1);
-
       if (cur_col == cur_seq_len)
       {
         new_seq -> len     = 0;
         new_seq -> max_len = LINE_SIZE;
-        new_seq -> data    = calloc(LINE_SIZE , sizeof(char));
+        new_seq -> data    = malloc(LINE_SIZE * sizeof(char));
       }
       else
       {
@@ -76,7 +72,7 @@ void readKey(FILE* h)
          */
         new_seq -> len     = g_tavProps.current_seq -> len - cur_col;
         new_seq -> max_len = new_seq -> len + LINE_SIZE;
-        new_seq -> data    = calloc(new_seq -> max_len , sizeof(char));
+        new_seq -> data    = malloc(new_seq -> max_len * sizeof(char));
 
         // syntax is destination, source, amount to copy
         memcpy(new_seq -> data, g_tavProps.current_seq -> data + cur_col, new_seq-> len);
@@ -165,12 +161,10 @@ void readKeyNormal(void)
       replace();
       break;
     case 'G':
-      gHandler(1);
+      // go to document end
       break;
     case 'g':
-      c = getchar();
-      if (c == 'g')
-        gHandler(-1);
+      // go to document start
       break;
     case ':':
       interpretCommand();
@@ -241,7 +235,6 @@ void modify_cur_pos(int row, int col, int KorA)
   if (row == LF)
   {
     g_tavProps.cursor_row += 1;
-    g_tavProps.actual_row += 1; // 
     if (col == CR)
       g_tavProps.cursor_col = 0;
   }
@@ -250,12 +243,7 @@ void modify_cur_pos(int row, int col, int KorA)
     // below statements execute when there has been a keypress or a valid
     // arrow movement was detected
     g_tavProps.cursor_row += row;
-    g_tavProps.actual_row += row;
     g_tavProps.cursor_col += col;
-
-    if (g_tavProps.actual_row >= g_tavProps.w_row - 1)
-      g_tavProps.actual_row = g_tavProps.w_row - 2;
-
     // code for updating the current_seq as well
     if (row != 0)
     {
@@ -273,38 +261,14 @@ void modify_cur_pos(int row, int col, int KorA)
     }
   }
 
-  // we don't want to go to the negative rows
   if (g_tavProps.cursor_row < 0)
-  {
     g_tavProps.cursor_row = 0;
-    g_tavProps.actual_row = 0;
-  }
 
-  // cursor values < 0 make no sense
   if (g_tavProps.cursor_col < 0)
     g_tavProps.cursor_col = 0;
 
-  // cursor values > col_limit are invalid
   if (g_tavProps.cursor_col > col_limit)
     g_tavProps.cursor_col = col_limit;
-
-  // below if conditions change the start line and endline values of the
-  // document on basis of the 'row value' of the current sequence being
-  // pointed at. 
-  if (g_tavProps.current_seq -> seq_row >= g_tavProps.end_line)
-  {
-    g_tavProps.start_line++;
-    g_tavProps.end_line++;
-  }
-
-  // removed '=' because don't want to scroll up when typing on the topmost
-  // line
-  if (g_tavProps.current_seq -> seq_row < g_tavProps.start_line)
-  {
-    g_tavProps.start_line--;
-    g_tavProps.end_line--;
-  }
-
 }
 
 /*

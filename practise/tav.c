@@ -1,6 +1,7 @@
 #include "helper.h"
 
 // global variables
+//hello rajat agrawal worldÃU
 config g_tavProps;
 
 int main(int argc, char** argv)
@@ -8,13 +9,15 @@ int main(int argc, char** argv)
   if (argc > 2)
   {
     printf("Usage: ./tav [filename]\nAdditional parameters not accepted");
-    exit(1);
+    exit(0);
   }
 
   initscr();
 
   if (argc == 2)
+  {
     g_tavProps.filename = argv[1];
+  }
   readFile(g_tavProps.filename);
 
   // enable the non canonical mode with all the required flags

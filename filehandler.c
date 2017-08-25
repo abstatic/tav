@@ -20,26 +20,44 @@
  */
 int readFile(char* filename)
 {
-  g_tavProps.openFile = fopen(filename, "a+");
+  g_tavProps.openFile = fopen(filename, "r");
 
+  // if the file can't be opened in "r" mode then perhaps it doesn't exist
+  // We initialize the editor and start getting user input.
+  // We anyway, create a new file while writing the file
   if (g_tavProps.openFile == NULL)
-    exit(1); // some serious error
+    return 1;
 
-  char* line = malloc(1024 * sizeof(char));
+  char* line   = (char*)calloc(1024 , sizeof(char));
+  char* w_line = (char*)calloc(1024 , sizeof(char));
 
   while (fgets(line, 1024, g_tavProps.openFile))
   {
-    int line_len = strlen(line);
+    // this code is to handle the tabs. just interpret tabs as sequence of
+    // spaces
+    int i = 0;
+    int j = 0;
+    while (line[i])
+    {
+      if (line[i] == '\t')
+        for (int i = 0; i < TAB_LENGTH; i++)
+          w_line[j++] = ' ';
+      else
+        w_line[j++] = line[i];
+      i++;
+    }
+    int line_len = strlen(w_line);
     sequence* new_seq = malloc(sizeof(sequence));
 
     new_seq -> prev    = NULL;
     new_seq -> next    = NULL;
     new_seq -> seq_row = 0;
-    new_seq -> len     = line_len;
+    new_seq -> len     = line_len - 1;
     new_seq -> max_len = line_len + LINE_SIZE;
-    new_seq -> data    = malloc((line_len + LINE_SIZE) * sizeof(char));
+    new_seq -> data    = calloc((line_len + LINE_SIZE) , sizeof(char));
 
-    memcpy(new_seq -> data, line, line_len);
+    /* memcpy(new_seq -> data, line, line_len); */
+    memcpy(new_seq -> data, w_line, line_len);
 
     new_seq -> data[line_len-1] = '\0'; // just to be sure and ignore the \n
 
@@ -62,10 +80,15 @@ int readFile(char* filename)
   g_tavProps.current_seq = g_tavProps.first_seq; // IMP
   // free because getline allocated the required memory to store it
   if (line)
-      free(line);
+    free(line);
+  if (w_line)
+    free(w_line);
   // needed because while loop runs one extra time than intended 
   // while reading the file 
-  g_tavProps.act_rows--; 
+  g_tavProps.act_rows--;
+
+  //  after reading the file close the file
+  fclose(g_tavProps.openFile);
   return 1;
 }
 
@@ -77,6 +100,8 @@ int readFile(char* filename)
  */
 void writeFile()
 {
+  // recreate the file from scratch
+  g_tavProps.openFile = fopen(g_tavProps.filename, "w");
   sequence* start = g_tavProps.first_seq;
   rewind(g_tavProps.openFile);
 

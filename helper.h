@@ -25,11 +25,7 @@
 
 
 // macros for escape sequences go here
-#define cursorforward(x)    printf("\033[%dD", (x))
-#define cursorbackward(x)   printf("\033[%dC", (x))
-#define cursorupward(x)     printf("\033[%dA", (x))
-#define cursordownward(x)   printf("\033[%dB", (x))
-#define clrscr              printf("\033c")  //VT100 clear screen without scroll
+#define clrscr              printf("\033c")  //VT100 magic clear screen without scroll
 #define gotopos(row,col)    printf("\033[%d;%dH", (row), (col)) // gotopos will always be off by one (counts from 0)
 
 // escape characters for keys
@@ -44,15 +40,28 @@
 #define LF                  10
 #define CR                  13
 
+// Color codes
+#define RED   "\x1B[31m"
+#define GRN   "\x1B[32m"
+#define YEL   "\x1B[33m"
+#define BLU   "\x1B[34m"
+#define MAG   "\x1B[35m"
+#define CYN   "\x1B[36m"
+#define WHT   "\x1B[37m"
+#define RESET "\x1B[0m"
+
+#define REDBG "\x1B[33m\x1B[41m" // escape code for a redbackround 41m
+
 // application defaults
 #define NORMAL_MODE         "Normal"
 #define INSERT_MODE         "Insert"
 #define REPLACE_MODE        "Replace"
 #define DEFAULT_FILE_NAME   "[NoName]"
 #define DEFAULT_MODE        "Normal"
-#define CMD_LEN             10
+#define CMD_LEN             80
 #define LINE_SIZE           80
 #define TAB_LENGTH          4
+#define LINE_NUMBERS        1 // set to 1 for line number on, experimental
 
 /*
  * A sequence will contain the metadata about the particular row
@@ -96,13 +105,15 @@ void setStatusLine(void); // set the status line and go back to your postion
 void modify_seq_len(int); // modify the current sequence length 
 void modify_cur_pos(int, int, int); // modify the cursor position by some value
 void insert(sequence*, int, int, char); // memmove for inserting
-int readFile(char*); // read the files
+int  readFile(char*); // read the files
 void readKeyNormal(void); // this method is used to read charactes in normal mode
 void replace(void); // replace the text under the cursor
 void interpretCommand(void); // to handle the command mode
 void exit_safely(void); // to safely exit the editor
 void writeFile(void); // method to write the file to disk
 void executeBash(); // execute the bash command input
+void updateRowNumber(sequence*, int); // update row numbers 
+void gHandler(int); // method to handle gg, G
 
 /*
  * config struct holds all the information related to the current state of
@@ -137,6 +148,10 @@ typedef struct
   char* cmd_buf;
   sequence* first_seq;
   sequence* current_seq;
+  int start_line;
+  int end_line;
+  int actual_row;
+  int actual_col;
   struct termios o_term;
   struct termios n_term;
 } config;
