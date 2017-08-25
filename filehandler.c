@@ -46,7 +46,7 @@ int readFile(char* filename)
         w_line[j++] = line[i];
       i++;
     }
-    int line_len = strlen(w_line);
+    int line_len = strlen(line);
     sequence* new_seq = malloc(sizeof(sequence));
 
     new_seq -> prev    = NULL;

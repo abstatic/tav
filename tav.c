@@ -21,9 +21,10 @@ int main(int argc, char** argv)
   getControl(STDIN_FILENO);
 
   // first flush all the contents of stdout
-  fflush(stdout);
+  /* fflush(stdout); */
 
   signal(SIGWINCH, handle_winresize);
+  signal(SIGINT, SIG_IGN);
   while (1)
   {
     drawWindow();

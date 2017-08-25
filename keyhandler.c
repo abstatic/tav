@@ -28,7 +28,6 @@ void readKey(FILE* h)
     else
       c = getc(h);
 
-    int cur_row     = g_tavProps.cursor_row;
     int cur_col     = g_tavProps.cursor_col;
     int cur_seq_len = g_tavProps.current_seq -> len;
 

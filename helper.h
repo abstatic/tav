@@ -61,7 +61,7 @@
 #define CMD_LEN             80
 #define LINE_SIZE           80
 #define TAB_LENGTH          4
-#define LINE_NUMBERS        1 // set to 1 for line number on, experimental
+#define LINE_NUMBERS        0 // set to 1 for line number on, experimental
 
 /*
  * A sequence will contain the metadata about the particular row

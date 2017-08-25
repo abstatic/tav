@@ -39,7 +39,6 @@ void getControl(int fd)
  */
 void handle_winresize(int sig)
 {
-  signal(SIGWINCH, SIG_IGN);
   struct winsize w;
   ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 
@@ -52,6 +51,8 @@ void handle_winresize(int sig)
   g_tavProps.current_seq = g_tavProps.first_seq;
   g_tavProps.cursor_row  = 0;
   g_tavProps.cursor_col  = 0;
+  g_tavProps.actual_row  = 1;
+  g_tavProps.actual_col  = 0;
   drawWindow();
 }
 
@@ -144,7 +145,6 @@ void drawWindow(void)
 {
   clrscr;
   int rows        = g_tavProps.w_row;
-  int cols        = g_tavProps.w_col;
   int act_rows    = g_tavProps.act_rows;
   int current_row = g_tavProps.actual_row - 1;
   int current_col = g_tavProps.cursor_col;
@@ -196,7 +196,7 @@ void setStatusLine(void)
   gotopos(bottom, 0);
   if (strlen(g_tavProps.cmd_buf) == 0)
   {
-    printf(GRN " %6s | %d-%d-%d-%d" RESET, mode, g_tavProps.cursor_row, g_tavProps.actual_row, g_tavProps.current_seq -> seq_row, g_tavProps.start_line);
+    printf(GRN " %6s |" RESET, mode);
     if (g_tavProps.is_mod)
       printf(RED " %s* " RESET, filename);
     else
