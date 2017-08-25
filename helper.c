@@ -304,8 +304,25 @@ void interpretCommand(void)
 void exit_safely(void)
 {
   int fd = STDOUT_FILENO;
-  /* if (g_tavProps.openFile != NULL) */
-    /* fclose(g_tavProps.openFile); */
+
+  /**
+   * because memory once taken, must be freed
+   * the sequence and the data portion both are allocated on heap
+   * hence, they must be freed
+   *
+   * The data part must be freed first. If the sequence is freed first then
+   * its impossible to free the memory allocated to the data part.
+   *
+  **/
+  sequence* temp = g_tavProps.first_seq;
+  while(temp != NULL)
+  {
+    if (temp -> data)
+      free (temp -> data);
+    sequence* prev = temp;
+    temp = temp -> next;
+    free(prev);
+  }
   tcsetattr(fd, TCSANOW, &g_tavProps.o_term);
   clrscr;
   exit(0);

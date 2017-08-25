@@ -337,6 +337,7 @@ void handleEscapeSequence(void)
    * Since every escape sequence is basically three characters
    * First has already been read
    */
+  /* asm("int $3"); */
   int c;
   c = getc(stdin);
   if (c == '[')
@@ -357,11 +358,11 @@ void handleEscapeSequence(void)
       case 'D':
         key = LEFT;
         break;
-      case '~':
+      case '3':
         key = DELETE;
         break;
       default:
-        key = 0;
+        key = DELETE;
         break;
     }
 
@@ -381,8 +382,9 @@ void handleEscapeSequence(void)
         case RIGHT:
           modify_cur_pos(0, 1, 0);
           break;
-        default:
-          printf("Unknown");
+        case DELETE:
+          c = getc(stdin);
+          break;
       }
     }
   }
